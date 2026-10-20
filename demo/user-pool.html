@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户池管理</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f0f2f5;
+    padding: 24px;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  h1 { font-size: 22px; color: #1f2937; margin-bottom: 16px; }
+
+  .toolbar {
+    display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .toolbar input, .toolbar select {
+    padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 14px; outline: none; background: #fff;
+  }
+  .toolbar input { width: 240px; }
+  .toolbar input:focus, .toolbar select:focus { border-color: #3b82f6; }
+
+  table {
+    width: 100%; border-collapse: collapse; background: #fff;
+    border-radius: 8px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    font-size: 14px;
+  }
+  thead th {
+    background: #1f2937; color: #fff; padding: 12px 10px;
+    text-align: left; white-space: nowrap; font-weight: 600;
+  }
+  tbody td {
+    padding: 10px; border-bottom: 1px solid #e5e7eb;
+    color: #374151; white-space: nowrap;
+  }
+  tbody tr:hover { background: #f9fafb; }
+  tbody tr.row-dead { background: #fff5f5; }
+  tbody tr.row-dead:hover { background: #fee2e2; }
+
+  .tag {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+  }
+  .tag.alive  { background: #dcfce7; color: #15803d; }
+  .tag.dead   { background: #fee2e2; color: #b91c1c; }
+  .tag.unknown{ background: #fef9c3; color: #a16207; }
+
+  .pwd { font-family: monospace; letter-spacing: 1px; cursor: pointer; }
+  .pwd:hover { color: #3b82f6; }
+
+  .btn-sms {
+    padding: 6px 14px; border: none; border-radius: 6px;
+    background: #3b82f6; color: #fff; font-size: 13px; cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-sms:hover { background: #2563eb; }
+  .btn-sms:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  /* 弹窗 */
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    background: #fff; border-radius: 10px; padding: 24px;
+    width: 420px; max-width: 92vw;
+  }
+  .modal h3 { margin-bottom: 12px; color: #1f2937; font-size: 17px; }
+  .modal p  { font-size: 14px; color: #6b7280; margin-bottom: 10px; }
+  .modal textarea {
+    width: 100%; height: 110px; padding: 10px; font-size: 14px;
+    border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;
+    font-family: inherit; outline: none;
+  }
+  .modal textarea:focus { border-color: #3b82f6; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .btn-cancel {
+    padding: 7px 16px; border: 1px solid #d1d5db; border-radius: 6px;
+    background: #fff; cursor: pointer; font-size: 14px;
+  }
+  .btn-send {
+    padding: 7px 16px; border: none; border-radius: 6px;
+    background: #3b82f6; color: #fff; cursor: pointer; font-size: 14px;
+  }
+  .btn-send:hover { background: #2563eb; }
+
+  /* 提示条 */
+  .toast {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    padding: 10px 22px; border-radius: 6px; color: #fff; font-size: 14px;
+    background: #16a34a; display: none; z-index: 200;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  }
+  .toast.error { background: #dc2626; }
+
+  .empty { text-align: center; color: #9ca3af; padding: 40px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>用户池管理</h1>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="搜索姓名 / 身份证号 / 电话号…">
+    <select id="statusFilter">
+      <option value="">全部生存状态</option>
+      <option value="健在">健在</option>
+      <option value="已故">已故</option>
+      <option value="未知">未知</option>
+    </select>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>姓名</th>
+        <th>性别</th>
+        <th>年龄</th>
+        <th>身份证号</th>
+        <th>游戏（资产）种类</th>
+        <th>游戏账号</th>
+        <th>密码</th>
+        <th>电话号</th>
+        <th>生存状态</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="userTableBody"></tbody>
+  </table>
+</div>
+
+<!-- 短信编辑弹窗 -->
+<div class="modal-mask" id="smsModal">
+  <div class="modal">
+    <h3>发送短信</h3>
+    <p id="smsTarget"></p>
+    <textarea id="smsContent" placeholder="请输入短信内容…"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-send" onclick="confirmSend()">确认发送</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========== 模拟数据：实际项目中替换为后端接口返回 ========== */
+const users = [
+  { name: "张伟",   gender: "男", age: 34, idCard: "000000199203150001", game: "王者荣耀", account: "zw_game001", password: "DEMO_ONLY_01", phone: "10000000001", status: "健在" },
+  { name: "李娜",   gender: "女", age: 28, idCard: "000000199607080002", game: "原神",     account: "lina_genshin", password: "DEMO_ONLY_02", phone: "10000000002", status: "健在" },
+  { name: "王强",   gender: "男", age: 56, idCard: "000000196911230003", game: "Steam 库存", account: "wq_steam88", password: "DEMO_ONLY_03", phone: "10000000003", status: "已故" },
+  { name: "刘洋",   gender: "男", age: 41, idCard: "000000198404120004", game: "魔兽世界", account: "ly_wow_cn",  password: "DEMO_ONLY_04", phone: "10000000004", status: "未知" },
+  { name: "陈静",   gender: "女", age: 63, idCard: "000000196204300005", game: "梦幻西游", account: "cj_mhxy63",  password: "DEMO_ONLY_05", phone: "10000000005", status: "已故" },
+  { name: "赵磊",   gender: "男", age: 25, idCard: "000000200002180006", game: "英雄联盟", account: "zl_lol2000", password: "DEMO_ONLY_06", phone: "10000000006", status: "健在" },
+];
+
+const tbody = document.getElementById("userTableBody");
+const searchInput = document.getElementById("searchInput");
+const statusFilter = document.getElementById("statusFilter");
+
+/* 密码脱敏，点击切换显示 */
+function togglePwd(el) {
+  const real = el.dataset.real;
+  el.textContent = el.textContent === "••••••" ? real : "••••••";
+}
+
+function statusTag(status) {
+  const cls = status === "健在" ? "alive" : status === "已故" ? "dead" : "unknown";
+  return `<span class="tag ${cls}">${status}</span>`;
+}
+
+function render() {
+  const kw = searchInput.value.trim().toLowerCase();
+  const st = statusFilter.value;
+  const list = users.filter(u =>
+    (st === "" || u.status === st) &&
+    (kw === "" || u.name.toLowerCase().includes(kw) ||
+      u.idCard.includes(kw) || u.phone.includes(kw))
+  );
+
+  /* 已故置顶，其次未知，健在最后 */
+  const priority = { "已故": 0, "未知": 1, "健在": 2 };
+  list.sort((a, b) => (priority[a.status] ?? 3) - (priority[b.status] ?? 3));
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty">暂无匹配的用户数据</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(u => `
+    <tr class="${u.status === '已故' ? 'row-dead' : ''}">
+      <td>${u.name}</td>
+      <td>${u.gender}</td>
+      <td>${u.age}</td>
+      <td>${u.idCard}</td>
+      <td>${u.game}</td>
+      <td>${u.account}</td>
+      <td><span class="pwd" data-real="${u.password}" onclick="togglePwd(this)" title="点击显示/隐藏">••••••</span></td>
+      <td>${u.phone}</td>
+      <td>${statusTag(u.status)}</td>
+      <td><button class="btn-sms" onclick="openModal('${u.phone}', '${u.name}')">发送短信</button></td>
+    </tr>
+  `).join("");
+}
+
+searchInput.addEventListener("input", render);
+statusFilter.addEventListener("change", render);
+
+/* ========== 短信弹窗与发送 ========== */
+let currentPhone = "";
+
+function openModal(phone, name) {
+  currentPhone = phone;
+  document.getElementById("smsTarget").textContent = `收件人：${name}（${phone}）`;
+  document.getElementById("smsContent").value = "";
+  document.getElementById("smsModal").classList.add("show");
+}
+
+function closeModal() {
+  document.getElementById("smsModal").classList.remove("show");
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast" + (isError ? " error" : "");
+  t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 2500);
+}
+
+async function confirmSend() {
+  const content = document.getElementById("smsContent").value.trim();
+  if (!content) { showToast("短信内容不能为空", true); return; }
+
+  /* ---- 接入真实短信服务时，替换为对后端接口的调用，例如：
+  const resp = await fetch("/api/sms/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone: currentPhone, content })
+  });
+  if (!resp.ok) { showToast("发送失败", true); return; }
+  ---- */
+  console.log("模拟发送短信 →", currentPhone, ":", content);
+
+  closeModal();
+  showToast(`短信已发送至 ${currentPhone}（模拟）`);
+}
+
+/* 点击遮罩关闭弹窗 */
+document.getElementById("smsModal").addEventListener("click", e => {
+  if (e.target.id === "smsModal") closeModal();
+});
+
+render();
+</script>
+</body>
+</html>

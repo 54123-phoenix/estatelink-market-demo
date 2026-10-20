@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户池APP</title>
+<link rel="stylesheet" href="/market.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(160deg, #ffd9c0 0%, #ffc2d1 50%, #d9c2f0 100%) fixed;
+    min-height: 100vh;
+    display: flex; justify-content: center;
+  }
+  .phone {
+    width: 420px; max-width: 100vw; height: 100dvh; min-height: 0;
+    background: linear-gradient(170deg, #fff8f3 0%, #fff2f0 60%, #f8efff 100%);
+    display: flex; flex-direction: column;
+    box-shadow: 0 0 40px rgba(180, 110, 120, .2);
+  }
+  .header {
+    position: relative;
+    background: linear-gradient(120deg, #ff9a56 0%, #ff6f91 55%, #9d6bce 100%);
+    color: #fff; padding: 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    overflow: hidden;
+  }
+  .header::after {
+    content: "";
+    position: absolute;
+    width: 110px; height: 110px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,236,170,.85) 0%, rgba(255,236,170,0) 70%);
+    top: -35px; right: 30px;
+    pointer-events: none;
+  }
+  .header .title { font-size: 17px; font-weight: 600; letter-spacing: 1px; }
+  .header select {
+    padding: 6px 10px; border-radius: 999px; border: none;
+    font-size: 13px; outline: none; max-width: 200px;
+    background: rgba(255,255,255,.9); color: #5c4a56;
+    position: relative; z-index: 1;
+  }
+  .subbar {
+    padding: 8px 16px; font-size: 12px; color: #a08b83;
+    background: rgba(255,255,255,.75); border-bottom: 1px solid #f7e4de;
+  }
+
+  .content { flex: 1; min-height: 0; overflow-y: auto; }
+  .page { display: none; min-height: 100%; }
+  .page.active { display: block; }
+
+  /* ===== 短信模块 ===== */
+  .messages {
+    padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .empty { text-align: center; color: #b8a39b; margin-top: 60px; font-size: 14px; }
+
+  .bubble {
+    max-width: 82%; padding: 10px 14px; border-radius: 16px;
+    font-size: 14px; line-height: 1.55; position: relative;
+    box-shadow: 0 2px 6px rgba(190, 130, 120, .12);
+  }
+  .bubble.from {
+    align-self: flex-start; background: #fff; color: #4a3f3a;
+    border-bottom-left-radius: 4px;
+  }
+  .bubble.mine {
+    align-self: flex-end;
+    background: linear-gradient(120deg, #ffa06e, #ff7f8e);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .meta { font-size: 11px; color: #b8a39b; margin-top: 4px; }
+  .meta.right { text-align: right; }
+
+  .reply-box {
+    align-self: flex-start; background: #fff; border-radius: 14px;
+    padding: 12px; box-shadow: 0 2px 8px rgba(190, 130, 120, .15);
+  }
+  .reply-box .hint { font-size: 12px; color: #8a7b74; margin-bottom: 8px; }
+  .reply-box .countdown { color: #e0606e; font-weight: 600; }
+  .reply-btns { display: flex; gap: 10px; }
+  .reply-btns button {
+    flex: 1; padding: 9px 0; border: none; border-radius: 999px;
+    font-size: 15px; cursor: pointer; color: #fff;
+    transition: opacity .2s;
+  }
+  .btn-yes { background: linear-gradient(120deg, #7bc496, #5aa87a); }
+  .btn-no  { background: linear-gradient(120deg, #e0707e, #c74a5e); }
+  .reply-btns button:hover { opacity: .88; }
+
+  .expired-tag {
+    align-self: flex-start; font-size: 12px; color: #b8a39b;
+    background: #f5ebe7; border-radius: 999px; padding: 3px 12px;
+  }
+
+  /* ===== 占位模块（账号信息 / 账号出售） ===== */
+  .placeholder {
+    margin: 24px 16px; padding: 52px 20px;
+    border: 2px dashed #eccfc4; border-radius: 18px;
+    text-align: center; color: #b8a39b;
+    background: rgba(255,255,255,.5);
+    position: relative; overflow: hidden;
+  }
+  .placeholder::before {
+    content: "";
+    position: absolute;
+    width: 90px; height: 90px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,200,150,.5) 0%, rgba(255,200,150,0) 70%);
+    top: -30px; left: 50%; transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .placeholder .ph-title { font-size: 17px; font-weight: 600; color: #8a7069; margin-bottom: 8px; }
+  .placeholder .ph-desc { font-size: 13px; line-height: 1.8; }
+
+  /* ===== 我的 / 信息录入 ===== */
+  .reg-form { padding: 20px 16px; }
+  .reg-form .reg-title { font-size: 16px; font-weight: 600; color: #4a3b45; margin-bottom: 4px; }
+  .reg-form .reg-sub { font-size: 12px; color: #b8a39b; margin-bottom: 16px; line-height: 1.6; }
+  .reg-form label { font-size: 13px; color: #5c4f49; display: block; margin: 10px 0 4px; }
+  .reg-form input, .reg-form select {
+    width: 100%; padding: 10px 14px; border: 1px solid #ecd9d3;
+    border-radius: 999px; font-size: 14px; outline: none;
+    background: rgba(255,255,255,.9);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .reg-form input:focus, .reg-form select:focus {
+    border-color: #ff8a65;
+    box-shadow: 0 0 0 3px rgba(255, 138, 101, .12);
+  }
+  .btn-register {
+    width: 100%; margin-top: 20px; padding: 12px 0; border: none;
+    border-radius: 999px;
+    background: linear-gradient(120deg, #ff8a5c, #ff6f91);
+    color: #fff; font-size: 16px; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(255, 122, 122, .35);
+    transition: opacity .2s;
+  }
+  .btn-register:hover { opacity: .88; }
+
+  /* ===== 底部导航 ===== */
+  .tabbar {
+    display: flex; background: rgba(255,255,255,.92);
+    border-top: 1px solid #f7e4de;
+  }
+  .tabbar button {
+    flex: 1; padding: 10px 0 12px; border: none; background: none;
+    font-size: 12px; color: #a08b83; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  .tabbar button .tab-icon {
+    width: 24px; height: 24px; border-radius: 999px;
+    background: #f5ebe7; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: #a08b83;
+    transition: all .2s;
+  }
+  .tabbar button.active { color: #e0684e; font-weight: 600; }
+  .tabbar button.active .tab-icon {
+    background: linear-gradient(120deg, #ff8a5c, #ff6f91);
+    color: #fff;
+  }
+
+  .toast {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    padding: 10px 24px; border-radius: 999px; color: #fff; font-size: 14px;
+    background: linear-gradient(120deg, #6fb98a, #57a274); display: none; z-index: 200;
+    box-shadow: 0 6px 16px rgba(110, 160, 130, .35);
+  }
+  .toast.error { background: linear-gradient(120deg, #d1516a, #b23a55); }
+
+  /* ===== 动效：页面切换淡入 ===== */
+  .page.active { animation: pageIn .35s ease; }
+  @keyframes pageIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== 动效：按钮按感 ===== */
+  button { transition: opacity .2s, transform .12s, box-shadow .2s; }
+  button:active { transform: scale(.96); }
+
+  /* ===== 动效：占位模块的暖阳呼吸 ===== */
+  .placeholder::before { animation: sunBreathe 4s ease-in-out infinite; }
+  @keyframes sunBreathe {
+    0%, 100% { opacity: .6; transform: translateX(-50%) scale(1); }
+    50%      { opacity: 1;  transform: translateX(-50%) scale(1.15); }
+  }
+
+  /* ===== 元素：星光（封面夜空） ===== */
+  .star {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    background: #fff; pointer-events: none;
+    animation: twinkle 2.6s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: .15; transform: scale(.7); }
+    50%      { opacity: .95; transform: scale(1.1); }
+  }
+
+  /* ===== 元素：蝴蝶（封面花田） ===== */
+  .butterfly {
+    position: absolute; width: 7px; height: 12px; pointer-events: none; z-index: 1;
+    background: linear-gradient(rgba(90,60,90,.85), rgba(90,60,90,.85)) center / 2px 100% no-repeat;
+  }
+  .butterfly::before, .butterfly::after {
+    content: ""; position: absolute; top: 0; width: 9px; height: 13px;
+    border-radius: 60% 60% 55% 55%;
+  }
+  .butterfly::before {
+    right: 5px; transform-origin: right center;
+    animation: flap .42s ease-in-out infinite alternate;
+  }
+  .butterfly::after {
+    left: 5px; transform-origin: left center;
+    animation: flap .42s ease-in-out infinite alternate;
+  }
+  @keyframes flap { from { transform: scaleX(1); } to { transform: scaleX(.35); } }
+  .bf-warm::before, .bf-warm::after { background: linear-gradient(135deg, #ffe0b0, #ff9a8a); }
+  .bf-purple::before, .bf-purple::after { background: linear-gradient(135deg, #e6d0ff, #c39ae0); }
+  .bf1 { animation: drift1 11s ease-in-out infinite alternate; }
+  .bf2 { animation: drift2 14s ease-in-out infinite alternate; }
+  @keyframes drift1 { from { left: 8%;  top: 56%; transform: rotate(10deg); } to { left: 58%; top: 14%; transform: rotate(-8deg); } }
+  @keyframes drift2 { from { left: 74%; top: 60%; transform: rotate(-6deg); } to { left: 26%; top: 24%; transform: rotate(10deg); } }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="header">
+    <span class="star" style="top:22%; left:20%"></span>
+    <span class="star" style="top:38%; left:46%; animation-delay:.7s"></span>
+    <span class="star" style="top:16%; left:66%; animation-delay:1.3s"></span>
+    <span class="butterfly bf-warm bf1"></span>
+    <span class="butterfly bf-purple bf2"></span>
+    <span class="title" id="pageTitle">短信</span>
+    <select id="identitySelect" onchange="onIdentityChange()"></select>
+  </div>
+  <div class="subbar" id="modeSubbar">演示模式：右上角切换身份，模拟对应用户的手机</div>
+
+  <div class="content">
+    <!-- 短信模块 -->
+    <div class="page active" id="page-sms">
+      <div class="messages" id="messages"></div>
+    </div>
+
+    <!-- 账号信息模块（占位，留给搭档开发） -->
+    <div class="page" id="page-assets">
+      <div class="placeholder">
+        <div class="ph-title">账号信息</div>
+        <div class="ph-desc">展示游戏账号内的装备、皮肤、道具等资产明细<br>模块开发中，敬请期待</div>
+      </div>
+    </div>
+
+    <!-- 行情与处置模块：沿用客户池身份，行情与交易事件均为演示数据 -->
+    <div class="page" id="page-sell">
+      <main class="market" aria-label="数字遗产行情与处置">
+        <div class="market-intro">
+          <div class="market-intro-meta">
+            <span class="market-demo-tag">演示数据</span>
+            <span id="marketUserStatus" class="market-user-status">读取客户池中…</span>
+          </div>
+          <p class="market-owner" id="marketOwner">数字遗产档案</p>
+          <h1 id="marketTitle">为留下的珍藏寻找合适去处</h1>
+          <p class="market-intro-copy" id="marketIntroCopy">了解价格与费用后，再决定如何安放这份数字收藏。</p>
+        </div>
+
+        <div class="market-empty" id="marketEmpty" hidden>
+          <div class="market-empty-mark" aria-hidden="true">✦</div>
+          <h2>这位用户还没有演示行情档案</h2>
+          <p>可切换到已故客户的示例档案，查看账号与饰品的完整处置流程。</p>
+          <button type="button" class="market-primary" id="marketSwitchCase">查看已故示例档案</button>
+        </div>
+
+        <div id="marketDetail" hidden>
+          <div class="market-tabs" role="tablist" aria-label="资产类型">
+            <button type="button" class="active" id="marketItemTab" role="tab" aria-selected="true" aria-controls="marketAssetPanel">饰品道具</button>
+            <button type="button" id="marketAccountTab" role="tab" aria-selected="false" aria-controls="marketAssetPanel">游戏账号</button>
+          </div>
+
+          <div id="marketAssetPanel" role="tabpanel" aria-labelledby="marketItemTab">
+            <section class="market-asset-section" aria-label="当前资产">
+              <div class="market-asset" id="marketAsset"></div>
+              <p class="market-asset-note" id="marketAssetNote"></p>
+            </section>
+
+            <div class="market-gate" id="marketGate" hidden></div>
+
+            <section class="market-section" aria-labelledby="marketTrendTitle">
+              <div class="market-section-head">
+                <h2 id="marketTrendTitle">价格走势</h2>
+                <button type="button" class="market-text-button" id="marketScenarioButton">模拟行情变化 ↻</button>
+              </div>
+              <div class="market-range" role="group" aria-label="走势时间范围">
+                <button type="button" class="active" data-market-range="7">近 7 天</button>
+                <button type="button" data-market-range="30">近 30 天</button>
+              </div>
+              <div id="marketChart" class="market-chart"></div>
+              <div id="marketTrendSummary" class="market-trend-summary"></div>
+              <p id="marketInsight" class="market-insight"></p>
+            </section>
+
+            <section class="market-section" aria-labelledby="marketCompareTitle">
+              <div class="market-section-head">
+                <h2 id="marketCompareTitle">多平台比价</h2>
+                <span class="market-section-caption">按预计到手排序</span>
+              </div>
+              <div id="marketQuotes" class="market-quotes"></div>
+              <p class="market-footnote">平台、价格及手续费均为演示样例，未连接真实行情，也未在任何平台实际挂单。</p>
+            </section>
+
+            <section class="market-section market-decision" aria-labelledby="marketDecisionTitle">
+              <div class="market-section-head">
+                <h2 id="marketDecisionTitle">继承人决定</h2>
+                <span id="marketFlowStatus" class="market-flow-status">待挂售</span>
+              </div>
+              <div id="marketDecisionBody"></div>
+            </section>
+
+            <div class="market-bottom-note">实际处置前仍需核验继承资格、账号可转让性与交易平台规则。</div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- 我的 / 信息录入模块 -->
+    <div class="page" id="page-me">
+      <div class="reg-form">
+        <div class="reg-title">录入我的信息</div>
+        <div class="reg-sub">请如实填写，提交后信息将进入用户池，平台会定期与您确认账户状态</div>
+        <label>姓名</label><input id="r_name" placeholder="您的真实姓名">
+        <label>性别</label>
+        <select id="r_gender"><option value="男">男</option><option value="女">女</option></select>
+        <label>年龄</label><input id="r_age" type="number" min="1" max="150" placeholder="您的年龄">
+        <label>身份证号</label><input id="r_idCard" maxlength="18" placeholder="18位身份证号">
+        <label>电话号</label><input id="r_phone" maxlength="11" placeholder="11位手机号">
+        <label>游戏（资产）种类</label><input id="r_game" placeholder="如：王者荣耀">
+        <label>游戏账号</label><input id="r_account" placeholder="游戏账号">
+        <label>游戏账号密码</label><input id="r_password" type="password" placeholder="游戏账号密码">
+        <button class="btn-register" onclick="submitRegister()">提交并录入用户池</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="tabbar">
+    <button class="active" data-page="sms" onclick="switchTab('sms')"><span class="tab-icon">信</span>短信</button>
+    <button data-page="assets" onclick="switchTab('assets')"><span class="tab-icon">号</span>账号信息</button>
+    <button data-page="sell" onclick="switchTab('sell')"><span class="tab-icon">价</span>行情处置</button>
+    <button data-page="me" onclick="switchTab('me')"><span class="tab-icon">我</span>我的</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/market.js"></script>
+<script>
+let currentUserId = null;
+let messages = [];
+
+const identitySelect = document.getElementById("identitySelect");
+const messagesEl = document.getElementById("messages");
+
+/* ========== 底部导航 ========== */
+const PAGE_TITLES = { sms: "短信", assets: "账号信息", sell: "遗产行情", me: "我的" };
+
+function switchTab(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+  document.querySelectorAll(".tabbar button").forEach(b =>
+    b.classList.toggle("active", b.dataset.page === name));
+  document.getElementById("pageTitle").textContent = PAGE_TITLES[name];
+  document.getElementById("modeSubbar").textContent = name === "sell"
+    ? "演示模式：以继承人视角查看行情，所有挂售与购买意向均为模拟"
+    : "演示模式：右上角切换身份，模拟对应用户的手机";
+  if (name === "sell") {
+    loadIdentities();
+  }
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast" + (isError ? " error" : "");
+  t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 2500);
+}
+
+/* ========== 短信模块 ========== */
+function fmtTime(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function render() {
+  if (messages.length === 0) {
+    messagesEl.innerHTML = `<div class="empty">暂无短信</div>`;
+    return;
+  }
+  messagesEl.innerHTML = messages.map(m => {
+    let html = `
+      <div class="bubble from">${m.content}</div>
+      <div class="meta">用户池平台 · ${fmtTime(m.sentAt)}</div>`;
+
+    if (m.status === "answered") {
+      const text = m.answer === "yes" ? "是" : "不是";
+      html += `
+        <div class="bubble mine">${text}</div>
+        <div class="meta right">我 · 已回复</div>`;
+    } else if (m.status === "pending") {
+      const deadline = Date.now() + m.remainMs;
+      html += `
+        <div class="reply-box">
+          <div class="hint">请回复确认（剩余 <span class="countdown cd" data-deadline="${deadline}">${Math.ceil(m.remainMs / 1000)}</span> 秒）</div>
+          <div class="reply-btns">
+            <button class="btn-yes" onclick="reply(${m.id}, 'yes')">是</button>
+            <button class="btn-no" onclick="reply(${m.id}, 'no')">不是</button>
+          </div>
+        </div>`;
+    } else {
+      html += `<div class="expired-tag">未回复（已超时）</div>`;
+    }
+    return html;
+  }).join("");
+}
+
+async function reply(inquiryId, answer) {
+  const resp = await fetch("/api/mobile/reply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inquiryId, answer }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) { showToast(data.error || "回复失败", true); return; }
+  showToast("已回复");
+  loadMessages();
+}
+
+async function loadMessages() {
+  if (!currentUserId) return;
+  try {
+    const resp = await fetch(`/api/mobile/messages?userId=${currentUserId}`);
+    const data = await resp.json();
+    messages = data.messages;
+    render();
+  } catch (e) {
+    console.error("加载短信失败", e);
+  }
+}
+
+function onIdentityChange() {
+  currentUserId = Number(identitySelect.value);
+  loadMessages();
+  renderMarket();
+}
+
+async function loadIdentities(keepCurrent = true) {
+  try {
+    await marketLoadSnapshot(false);
+  } catch (error) {
+    showToast(error.message || "行情加载失败", true);
+    return;
+  }
+  identitySelect.innerHTML = marketUsers
+    .map(u => `<option value="${u.id}">${u.name}（${u.phone}）</option>`)
+    .join("");
+  const stillThere = marketUsers.some(u => u.id === currentUserId);
+  if (!keepCurrent || !stillThere) {
+    const requestedId = Number(new URLSearchParams(location.search).get("userId"));
+    currentUserId = marketUsers.some(u => u.id === requestedId)
+      ? requestedId : (marketUsers[0] ? marketUsers[0].id : null);
+  }
+  if (currentUserId) identitySelect.value = String(currentUserId);
+  loadMessages();
+  renderMarket();
+}
+
+/* ========== 我的 / 信息录入 ========== */
+async function submitRegister() {
+  const body = {
+    name: document.getElementById("r_name").value,
+    gender: document.getElementById("r_gender").value,
+    age: document.getElementById("r_age").value,
+    idCard: document.getElementById("r_idCard").value,
+    phone: document.getElementById("r_phone").value,
+    game: document.getElementById("r_game").value,
+    account: document.getElementById("r_account").value,
+    password: document.getElementById("r_password").value,
+  };
+  const resp = await fetch("/api/users/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await resp.json();
+  if (!resp.ok) { showToast(data.error || "提交失败", true); return; }
+
+  showToast("信息已录入用户池");
+  for (const id of ["r_name", "r_age", "r_idCard", "r_phone", "r_game", "r_account", "r_password"]) {
+    document.getElementById(id).value = "";
+  }
+  // 刷新身份列表并切换为新注册的用户
+  await loadIdentities();
+  currentUserId = data.userId;
+  identitySelect.value = data.userId;
+  loadMessages();
+  switchTab("sms");
+}
+
+loadIdentities(false).then(() => {
+  if (new URLSearchParams(location.search).get("tab") === "sell") switchTab("sell");
+});
+setInterval(loadMessages, 2000);
+setInterval(() => {
+  if (marketBusy || !document.getElementById("page-sell").classList.contains("active")) return;
+  marketLoadSnapshot().catch(error => console.error("刷新行情失败", error));
+}, 5000);
+
+/* 倒计时每秒滴答一次（只更新数字，数据仍每2秒与服务器同步） */
+setInterval(() => {
+  document.querySelectorAll(".cd").forEach(el => {
+    el.textContent = Math.max(0, Math.ceil((Number(el.dataset.deadline) - Date.now()) / 1000));
+  });
+}, 1000);
+</script>
+</body>
+</html>

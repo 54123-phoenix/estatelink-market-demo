@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+!.env.example
+demo/data.json
+demo/market_state.json
+demo/market_state.tmp

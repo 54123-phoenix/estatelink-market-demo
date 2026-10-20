@@ -1,0 +1,237 @@
+{
+  "gameImages": {
+    "王者荣耀": "/assets/games/honor-of-kings.webp",
+    "原神": "/assets/games/genshin-impact.webp",
+    "Steam 库存": "/assets/games/steam.webp",
+    "魔兽世界": "/assets/games/world-of-warcraft.webp",
+    "梦幻西游": "/assets/games/fantasy-westward-journey.webp",
+    "英雄联盟": "/assets/games/league-of-legends.webp",
+    "和平精英": "/assets/games/peace-elite.webp",
+    "DNF": "/assets/games/dnf.webp",
+    "欢乐斗地主": "/assets/games/happy-doudizhu.webp",
+    "CS2 库存": "/assets/games/counter-strike-2.webp",
+    "剑网3": "/assets/games/jx3.webp",
+    "QQ象棋": "/assets/games/qq-games.webp"
+  },
+  "platformImages": {
+    "网易 BUFF": "/assets/platforms/buff.webp",
+    "C5GAME": "/assets/platforms/c5game.webp",
+    "悠悠有品": "/assets/platforms/youpin.webp",
+    "交易猫": "/assets/platforms/jiaoyimao.webp",
+    "盼之代售": "/assets/platforms/pzds.webp",
+    "淘手游": "/assets/platforms/taoshouyou.webp",
+    "藏宝阁": "/assets/platforms/cangbaoge.webp"
+  },
+  "profiles": {
+    "wq_steam88": {
+      "item": {
+        "name": "蝴蝶刀 | 多普勒",
+        "image": "/assets/items/butterfly-knife-doppler.webp",
+        "imageCaption": "同款道具示意",
+        "kind": "CS2 饰品 · 单件出售",
+        "meta": "崭新出厂 · 已登记 1 件",
+        "art": "CS2",
+        "symbol": "✦",
+        "note": "这件饰品属于当前 Steam 库存。单卖与账号整体转让是两种处置方案，金额不能相加。",
+        "history": [
+          15140,
+          15420,
+          15270,
+          15880,
+          16010,
+          16250,
+          16130,
+          16590,
+          16870,
+          16640,
+          17450,
+          17080,
+          17120
+        ],
+        "quotes": [
+          {
+            "platform": "网易 BUFF",
+            "price": 17320,
+            "fee": 0.025
+          },
+          {
+            "platform": "C5GAME",
+            "price": 17120,
+            "fee": 0.01
+          },
+          {
+            "platform": "悠悠有品",
+            "price": 17420,
+            "fee": 0.035
+          }
+        ],
+        "buyer": {
+          "platform": "C5GAME",
+          "price": 16900,
+          "fee": 0.01
+        },
+        "buyout": 16150
+      },
+      "account": {
+        "name": "Steam 库存账号",
+        "image": "/assets/games/counter-strike-2.webp",
+        "imageCaption": "库存关联游戏示意",
+        "kind": "游戏账号 · 整体转让意向",
+        "meta": "包含已登记饰品 · 7 年使用记录",
+        "art": "STEAM",
+        "symbol": "▦",
+        "note": "账号整体方案包含上述饰品，不与饰品单卖金额叠加。账号能否转让须核对平台规则。",
+        "history": [
+          26900,
+          27340,
+          27180,
+          27620,
+          28050,
+          27880,
+          28320,
+          28760,
+          28540,
+          29150,
+          28990,
+          28680,
+          28900
+        ],
+        "quotes": [
+          {
+            "platform": "交易猫",
+            "price": 29400,
+            "fee": 0.05
+          },
+          {
+            "platform": "盼之代售",
+            "price": 28900,
+            "fee": 0.03
+          },
+          {
+            "platform": "淘手游",
+            "price": 29700,
+            "fee": 0.06
+          }
+        ],
+        "buyer": {
+          "platform": "交易猫",
+          "price": 28100,
+          "fee": 0.05
+        },
+        "buyout": 26800
+      }
+    },
+    "cj_mhxy63": {
+      "item": {
+        "name": "无级别长剑",
+        "image": "/assets/items/fantasy-sword.webp",
+        "imageCaption": "同类长剑示意",
+        "kind": "梦幻西游装备 · 单件出售",
+        "meta": "150 级 · 已登记 1 件",
+        "art": "梦幻",
+        "symbol": "✦",
+        "note": "装备单卖与角色账号整体转让是两种处置方案，金额不能相加。",
+        "history": [
+          7840,
+          8010,
+          7980,
+          8220,
+          8450,
+          8380,
+          8620,
+          8780,
+          8690,
+          8840,
+          8760,
+          8910,
+          8790
+        ],
+        "quotes": [
+          {
+            "platform": "藏宝阁",
+            "price": 8850,
+            "fee": 0.05
+          },
+          {
+            "platform": "交易猫",
+            "price": 8790,
+            "fee": 0.035
+          },
+          {
+            "platform": "盼之代售",
+            "price": 8690,
+            "fee": 0.02
+          }
+        ],
+        "buyer": {
+          "platform": "交易猫",
+          "price": 8610,
+          "fee": 0.035
+        },
+        "buyout": 8120
+      },
+      "account": {
+        "name": "梦幻西游角色账号",
+        "image": "/assets/games/fantasy-westward-journey.webp",
+        "imageCaption": "游戏画面示意",
+        "kind": "游戏账号 · 整体转让意向",
+        "meta": "含已登记装备 · 角色等级 175",
+        "art": "梦幻",
+        "symbol": "▦",
+        "note": "账号整体方案包含上述装备，不与装备单卖金额叠加。账号能否转让须核对平台规则。",
+        "history": [
+          22400,
+          22650,
+          23100,
+          22880,
+          23480,
+          23920,
+          23760,
+          24200,
+          24580,
+          24310,
+          24920,
+          24750,
+          24680
+        ],
+        "quotes": [
+          {
+            "platform": "藏宝阁",
+            "price": 24900,
+            "fee": 0.05
+          },
+          {
+            "platform": "交易猫",
+            "price": 24680,
+            "fee": 0.03
+          },
+          {
+            "platform": "盼之代售",
+            "price": 24480,
+            "fee": 0.02
+          }
+        ],
+        "buyer": {
+          "platform": "交易猫",
+          "price": 23900,
+          "fee": 0.03
+        },
+        "buyout": 22800
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "name": "基准行情",
+      "factor": 1
+    },
+    {
+      "name": "上涨情景",
+      "factor": 1.045
+    },
+    {
+      "name": "回落情景",
+      "factor": 0.94
+    }
+  ]
+}
