@@ -64,7 +64,7 @@ function showToast(message, error = false) {
 }
 
 function userProfile(user) {
-  return overview.catalog.profiles[user.account] || null;
+  return overview.catalog.profiles[String(user.id)] || null;
 }
 
 function flowFor(user, assetType) {
