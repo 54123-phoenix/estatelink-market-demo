@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>客户档案 · 遗链 EstateLink</title><link rel="stylesheet" href="/archive.css"><link rel="icon" href="data:,">
+</head>
+<body class="archive-body"><main class="archive-shell">
+<nav class="archive-nav" aria-label="管理导航"><a href="/">← 客户池</a><a href="/market-admin">行情管理</a><a id="mobileLink" href="/mobile">手机端档案预览</a></nav>
+<header class="archive-hero"><span class="archive-caption">ESTATELINK / 数字资产档案</span><h1 id="archiveTitle">客户档案</h1><p>把重要的账号、珍藏与安排，整理在同一份档案中。</p><p id="archiveUpdated" class="archive-stamp"></p></header>
+<p class="archive-notice">仅使用虚构演示资料。演示身份，不代表真实访问授权。敏感资料由后端脱敏展示，数据库加密保存；本演示尚未提供登录与访问隔离。</p>
+<div id="archiveStatus" role="status" class="archive-empty">正在读取客户档案…</div>
+<div id="archiveContent" hidden>
+<section class="archive-section" aria-labelledby="profileTitle"><div class="archive-heading"><h2 id="profileTitle">01 / 基本资料</h2><button id="editProfile" type="button">编辑资料</button></div><div id="profileDetails"></div><form id="profileForm" class="archive-form" hidden><p class="archive-stamp">敏感输入框留空表示保持原值；勾选“清除此项”可删除可选资料。</p><div id="profileFields" class="archive-fields"></div><footer><button type="submit" class="primary">保存资料</button><button type="button" data-cancel="profileForm">取消</button><span class="archive-feedback" role="status"></span></footer></form></section>
+<section class="archive-section" aria-labelledby="assetsTitle"><div class="archive-heading"><h2 id="assetsTitle">02 / 主账号与资产</h2><button id="addAsset" type="button">＋ 登记资产</button></div><p class="archive-stamp">每位客户保留一个主账号；取得成本与市场估值分别记录，新登记资产默认暂无行情。</p><div id="assetList" class="archive-list"></div><form id="assetForm" class="archive-form" hidden><h3 id="assetFormTitle">登记资产</h3><div id="assetFields" class="archive-fields"></div><footer><button type="submit" class="primary">保存资产</button><button type="button" data-cancel="assetForm">取消</button><span class="archive-feedback" role="status"></span></footer></form></section>
+<section class="archive-section" aria-labelledby="contractsTitle"><div class="archive-heading"><h2 id="contractsTitle">03 / 服务合同</h2><button id="addContract" type="button">＋ 登记合同</button></div><p class="archive-stamp">这里只记录合同信息，不上传文件，不提供电子签署。</p><div id="contractList" class="archive-list"></div><form id="contractForm" class="archive-form" hidden><h3 id="contractFormTitle">登记合同</h3><div id="contractFields" class="archive-fields"></div><footer><button type="submit" class="primary">保存合同</button><button type="button" data-cancel="contractForm">取消</button><span class="archive-feedback" role="status"></span></footer></form></section>
+</div></main><script src="/archive-common.js"></script><script src="/archive-admin.js"></script></body></html>

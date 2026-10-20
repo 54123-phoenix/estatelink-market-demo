@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>用户池管理</title>
 <style>
+  .modal { max-width:calc(100vw - 28px); max-height:90dvh; overflow:auto; }
+  .table-scroll { overflow:auto; }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
@@ -282,6 +285,7 @@
   @keyframes drift2 { from { left: 80%; top: 64%; transform: rotate(-6deg); } to { left: 30%; top: 20%; transform: rotate(10deg); } }
   @keyframes drift3 { from { left: 45%; top: 74%; transform: rotate(4deg);  } to { left: 90%; top: 42%; transform: rotate(-10deg); } }
 </style>
+<link rel="icon" href="data:,">
 </head>
 <body>
 <div class="container">
@@ -298,9 +302,9 @@
     <h1>用户池管理</h1>
     <p>每一份数字遗产，都值得被温柔以待</p>
   </div>
-
+<p style="margin:12px 0;color:#754951">仅使用虚构资料。演示身份，不代表真实访问授权。变更自动保存到 SQLite。</p>
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="搜索姓名 / 身份证号 / 电话号…">
+    <input type="text" id="searchInput" placeholder="搜索客户 ID / 脱敏姓名 / 联系方式…">
     <select id="statusFilter">
       <option value="">全部生存状态</option>
       <option value="疑似已故">疑似已故</option>
@@ -310,12 +314,12 @@
     </select>
     <a class="btn-market btn-market-admin" href="/market-admin">行情管理后台</a>
     <button class="btn-add" onclick="openAddModal()">＋ 添加用户</button>
-    <button class="btn-save" onclick="saveData()">保存</button>
+    <button class="btn-save" onclick="saveData()">自动保存状态</button>
     <button class="btn-auto" id="autoBtn" onclick="toggleAuto()">自动发送：…</button>
     <span class="auto-hint" id="autoHint"></span>
   </div>
 
-  <table>
+  <div class="table-scroll"><table>
     <thead>
       <tr>
         <th>姓名</th>
@@ -324,7 +328,7 @@
         <th>身份证号</th>
         <th>游戏（资产）种类</th>
         <th>游戏账号</th>
-        <th>密码</th>
+
         <th>电话号</th>
         <th>生存状态</th>
         <th>未回应</th>
@@ -332,7 +336,7 @@
       </tr>
     </thead>
     <tbody id="userTableBody"></tbody>
-  </table>
+  </table></div>
 </div>
 
 <div class="modal-mask" id="smsModal">
@@ -354,16 +358,15 @@
   <div class="modal" style="width: 520px;">
     <h3>添加用户</h3>
     <div class="form-grid">
-      <div><label>姓名</label><input id="f_name" placeholder="张三"></div>
-      <div><label>性别</label>
+      <div><label for="f_name">姓名</label><input id="f_name" placeholder="张三"></div>
+      <div><label for="f_gender">性别</label>
         <select id="f_gender"><option value="男">男</option><option value="女">女</option></select>
       </div>
-      <div><label>年龄</label><input id="f_age" type="number" min="1" max="150" placeholder="30"></div>
-      <div><label>电话号</label><input id="f_phone" maxlength="11" placeholder="11位手机号"></div>
-      <div class="span2"><label>身份证号</label><input id="f_idCard" maxlength="18" placeholder="18位身份证号"></div>
-      <div><label>游戏（资产）种类</label><input id="f_game" placeholder="如：王者荣耀"></div>
-      <div><label>游戏账号</label><input id="f_account" placeholder="游戏账号"></div>
-      <div class="span2"><label>密码</label><input id="f_password" placeholder="游戏账号密码"></div>
+      <div><label for="f_age">年龄</label><input id="f_age" type="number" min="1" max="150" placeholder="30"></div>
+      <div><label for="f_phone">电话号</label><input id="f_phone" maxlength="11" placeholder="11位虚构演示手机号"></div>
+      <div class="span2"><label for="f_idCard">身份证号</label><input id="f_idCard" maxlength="18" placeholder="18位，可不填"></div>
+      <div><label for="f_game">游戏（资产）种类</label><input id="f_game" placeholder="如：王者荣耀"></div>
+      <div><label for="f_account">游戏账号</label><input id="f_account" placeholder="游戏账号"></div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeAddModal()">取消</button>
@@ -372,234 +375,7 @@
   </div>
 </div>
 
-<script>
-let users = [];
-let autoEnabled = false;
-const tbody = document.getElementById("userTableBody");
-const searchInput = document.getElementById("searchInput");
-const statusFilter = document.getElementById("statusFilter");
-
-const DEFAULT_SMS = "【用户池平台】尊敬的用户：我们正在进行例行的账户信息核对，请您在方便时打开本消息回复确认。如给您带来不便，敬请谅解。";
-
-/* 疑似已故 > 已故 > 未知 > 健在 */
-const priority = { "疑似已故": 0, "已故": 1, "未知": 2, "健在": 3 };
-
-function togglePwd(el) {
-  const real = el.dataset.real;
-  el.textContent = el.textContent === "••••••" ? real : "••••••";
-}
-
-function statusTag(status) {
-  const cls = { "健在": "alive", "已故": "dead", "未知": "unknown", "疑似已故": "suspected" }[status] || "unknown";
-  return `<span class="tag ${cls}">${status}</span>`;
-}
-
-function missedCell(u) {
-  const cls = u.missedCount > 0 ? "warn" : "";
-  let html = `<span class="missed"><span class="${cls}">${u.missedCount}/3</span></span>`;
-  if (u.pending) {
-    const deadline = Date.now() + u.pending.remainMs;
-    html += `<div class="pending-hint">等待回复 <span class="cd" data-deadline="${deadline}">${Math.ceil(u.pending.remainMs / 1000)}</span>s</div>`;
-  }
-  return html;
-}
-
-function render() {
-  const kw = searchInput.value.trim().toLowerCase();
-  const st = statusFilter.value;
-  const list = users.filter(u =>
-    (st === "" || u.status === st) &&
-    (kw === "" || u.name.toLowerCase().includes(kw) ||
-      u.idCard.includes(kw) || u.phone.includes(kw))
-  );
-  list.sort((a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9));
-
-  if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" class="empty">暂无匹配的用户数据</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = list.map(u => {
-    const rowCls = u.status === "疑似已故" ? "row-suspected" : u.status === "已故" ? "row-dead" : "";
-    let btn = u.pending
-      ? `<button class="btn-sms" disabled>等待回复…</button>`
-      : `<button class="btn-sms" onclick="openModal(${u.id}, '${u.phone}', '${u.name}')">发送短信</button>`;
-    if (u.status === "疑似已故") {
-      btn += `<button class="btn-confirm" onclick="confirmDead(${u.id}, '${u.name}')">确认已故</button>`;
-    }
-    btn += '<a class="btn-market" href="/market-admin?userId=' + u.id + '">管理行情</a>';
-    if (u.status === "已故") {
-      btn += '<a class="btn-market" href="/mobile?userId=' + u.id + '&tab=sell" target="_blank" rel="noopener">继承人预览</a>';
-    }
-    return `
-    <tr class="${rowCls}">
-      <td>${u.name}</td>
-      <td>${u.gender}</td>
-      <td>${u.age}</td>
-      <td>${u.idCard}</td>
-      <td>${u.game}</td>
-      <td>${u.account}</td>
-      <td><span class="pwd" data-real="${u.password}" onclick="togglePwd(this)" title="点击显示/隐藏">••••••</span></td>
-      <td>${u.phone}</td>
-      <td>${statusTag(u.status)}</td>
-      <td>${missedCell(u)}</td>
-      <td>${btn}</td>
-    </tr>`;
-  }).join("");
-}
-
-async function loadUsers() {
-  try {
-    const resp = await fetch("/api/users");
-    const data = await resp.json();
-    users = data.users;
-    updateAutoUI(data.autoSend);
-    render();
-  } catch (e) {
-    console.error("加载用户失败", e);
-  }
-}
-
-function updateAutoUI(autoSend) {
-  autoEnabled = autoSend.enabled;
-  const btn = document.getElementById("autoBtn");
-  btn.textContent = autoEnabled ? "自动发送：开" : "自动发送：关";
-  btn.classList.toggle("on", autoEnabled);
-  document.getElementById("autoHint").innerHTML = autoEnabled
-    ? `每 ${autoSend.intervalSec}s 询问 ${autoSend.batch} 位，下次 <span class="cd" data-deadline="${Date.now() + autoSend.remainMs}">${Math.ceil(autoSend.remainMs / 1000)}</span>s`
-    : "";
-}
-
-async function toggleAuto() {
-  const resp = await fetch("/api/auto-send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ enabled: !autoEnabled }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) { showToast(data.error || "操作失败", true); return; }
-  showToast(data.enabled ? "自动发送已开启" : "自动发送已关闭");
-  loadUsers();
-}
-
-async function saveData() {
-  const resp = await fetch("/api/save", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: "{}",
-  });
-  const data = await resp.json();
-  if (!resp.ok) { showToast("保存失败", true); return; }
-  showToast(`已保存 ${data.userCount} 个用户到 data.json`);
-}
-
-searchInput.addEventListener("input", render);
-statusFilter.addEventListener("change", render);
-
-let currentUserId = null;
-
-function openModal(userId, phone, name) {
-  currentUserId = userId;
-  document.getElementById("smsTarget").textContent = `收件人：${name}（${phone}）`;
-  document.getElementById("smsContent").value = DEFAULT_SMS;
-  document.getElementById("smsModal").classList.add("show");
-}
-
-function closeModal() {
-  document.getElementById("smsModal").classList.remove("show");
-}
-
-function showToast(msg, isError = false) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.className = "toast" + (isError ? " error" : "");
-  t.style.display = "block";
-  setTimeout(() => t.style.display = "none", 2500);
-}
-
-async function confirmSend() {
-  const content = document.getElementById("smsContent").value.trim();
-  if (!content) { showToast("短信内容不能为空", true); return; }
-
-  const resp = await fetch("/api/sms/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: currentUserId, content }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) { showToast(data.error || "发送失败", true); return; }
-
-  closeModal();
-  showToast("短信已发送，等待对方回复");
-  loadUsers();
-}
-
-document.getElementById("smsModal").addEventListener("click", e => {
-  if (e.target.id === "smsModal") closeModal();
-});
-
-/* ========== 人工确认已故 ========== */
-async function confirmDead(userId, name) {
-  if (!confirm(`确认 ${name} 已经过世？\n（建议在电话核实或联系家属后再操作）`)) return;
-  const resp = await fetch("/api/users/confirm-dead", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) { showToast(data.error || "操作失败", true); return; }
-  showToast(`${name} 已标记为已故`);
-  loadUsers();
-}
-
-/* ========== 添加用户 ========== */
-function openAddModal() {
-  for (const id of ["f_name", "f_age", "f_phone", "f_idCard", "f_game", "f_account", "f_password"]) {
-    document.getElementById(id).value = "";
-  }
-  document.getElementById("addModal").classList.add("show");
-}
-
-function closeAddModal() {
-  document.getElementById("addModal").classList.remove("show");
-}
-
-document.getElementById("addModal").addEventListener("click", e => {
-  if (e.target.id === "addModal") closeAddModal();
-});
-
-async function submitAddUser() {
-  const body = {
-    name: document.getElementById("f_name").value,
-    gender: document.getElementById("f_gender").value,
-    age: document.getElementById("f_age").value,
-    phone: document.getElementById("f_phone").value,
-    idCard: document.getElementById("f_idCard").value,
-    game: document.getElementById("f_game").value,
-    account: document.getElementById("f_account").value,
-    password: document.getElementById("f_password").value,
-  };
-  const resp = await fetch("/api/users/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = await resp.json();
-  if (!resp.ok) { showToast(data.error || "添加失败", true); return; }
-  closeAddModal();
-  showToast("用户已添加");
-  loadUsers();
-}
-
-loadUsers();
-setInterval(loadUsers, 2000);
-
-/* 倒计时每秒滴答一次（只更新数字，数据仍每2秒与服务器同步） */
-setInterval(() => {
-  document.querySelectorAll(".cd").forEach(el => {
-    el.textContent = Math.max(0, Math.ceil((Number(el.dataset.deadline) - Date.now()) / 1000));
-  });
-}, 1000);
-</script>
+<script src="/archive-common.js"></script>
+<script src="/admin-pool.js"></script>
 </body>
 </html>

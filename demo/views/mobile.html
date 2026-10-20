@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>用户池APP</title>
 <link rel="stylesheet" href="/market.css">
+<link rel="stylesheet" href="/archive.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -34,8 +35,10 @@
     top: -35px; right: 30px;
     pointer-events: none;
   }
-  .header .title { font-size: 17px; font-weight: 600; letter-spacing: 1px; }
+  .header .title {
+    flex-shrink:0; font-size: 17px; font-weight: 600; letter-spacing: 1px; }
   .header select {
+    min-width:0;
     padding: 6px 10px; border-radius: 999px; border: none;
     font-size: 13px; outline: none; max-width: 200px;
     background: rgba(255,255,255,.9); color: #5c4a56;
@@ -224,6 +227,7 @@
   @keyframes drift1 { from { left: 8%;  top: 56%; transform: rotate(10deg); } to { left: 58%; top: 14%; transform: rotate(-8deg); } }
   @keyframes drift2 { from { left: 74%; top: 60%; transform: rotate(-6deg); } to { left: 26%; top: 24%; transform: rotate(10deg); } }
 </style>
+<link rel="icon" href="data:,">
 </head>
 <body>
 <div class="phone">
@@ -236,7 +240,7 @@
     <span class="title" id="pageTitle">短信</span>
     <select id="identitySelect" onchange="onIdentityChange()"></select>
   </div>
-  <div class="subbar" id="modeSubbar">演示模式：右上角切换身份，模拟对应用户的手机</div>
+  <div class="subbar" id="modeSubbar">演示身份，不代表真实访问授权；仅使用虚构资料</div>
 
   <div class="content">
     <!-- 短信模块 -->
@@ -245,12 +249,7 @@
     </div>
 
     <!-- 账号信息模块（占位，留给搭档开发） -->
-    <div class="page" id="page-assets">
-      <div class="placeholder">
-        <div class="ph-title">账号信息</div>
-        <div class="ph-desc">展示游戏账号内的装备、皮肤、道具等资产明细<br>模块开发中，敬请期待</div>
-      </div>
-    </div>
+    <div class="page" id="page-assets"><div class="archive-mobile"><p class="archive-notice">演示身份，不代表真实访问授权。仅显示后端脱敏资料。</p><div id="mobileArchive" role="region" aria-label="当前客户档案">请选择演示身份</div></div></div>
 
     <!-- 行情与处置模块：沿用客户池身份，行情与交易事件均为演示数据 -->
     <div class="page" id="page-sell">
@@ -325,19 +324,19 @@
 
     <!-- 我的 / 信息录入模块 -->
     <div class="page" id="page-me">
-      <div class="reg-form">
-        <div class="reg-title">录入我的信息</div>
-        <div class="reg-sub">请如实填写，提交后信息将进入用户池，平台会定期与您确认账户状态</div>
-        <label>姓名</label><input id="r_name" placeholder="您的真实姓名">
-        <label>性别</label>
+      <div class="archive-mobile"><section class="archive-section" id="meSummary">正在读取资料…</section><button type="button" class="archive-button" id="showRegister">＋ 新增演示客户</button></div>
+      <div class="reg-form" id="registerForm" hidden>
+        <div class="reg-title">新增虚构演示客户</div>
+        <div class="reg-sub">仅填写虚构资料。提交后自动保存，并进入该客户的档案。</div>
+        <label for="r_name">姓名</label><input id="r_name" placeholder="虚构演示姓名">
+        <label for="r_gender">性别</label>
         <select id="r_gender"><option value="男">男</option><option value="女">女</option></select>
-        <label>年龄</label><input id="r_age" type="number" min="1" max="150" placeholder="您的年龄">
-        <label>身份证号</label><input id="r_idCard" maxlength="18" placeholder="18位身份证号">
-        <label>电话号</label><input id="r_phone" maxlength="11" placeholder="11位手机号">
-        <label>游戏（资产）种类</label><input id="r_game" placeholder="如：王者荣耀">
-        <label>游戏账号</label><input id="r_account" placeholder="游戏账号">
-        <label>游戏账号密码</label><input id="r_password" type="password" placeholder="游戏账号密码">
-        <button class="btn-register" onclick="submitRegister()">提交并录入用户池</button>
+        <label for="r_age">年龄</label><input id="r_age" type="number" min="1" max="150" placeholder="您的年龄">
+        <label for="r_idCard">身份证号</label><input id="r_idCard" maxlength="18" placeholder="18位，可不填">
+        <label for="r_phone">电话号</label><input id="r_phone" maxlength="11" placeholder="11位虚构演示手机号">
+        <label for="r_game">游戏（资产）种类</label><input id="r_game" placeholder="如：王者荣耀">
+        <label for="r_account">游戏账号</label><input id="r_account" placeholder="游戏账号">
+        <button class="btn-register" id="registerSubmit" onclick="submitRegister()">提交并录入用户池</button>
       </div>
     </div>
   </div>
@@ -354,6 +353,8 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="/market.js"></script>
+<script src="/archive-common.js"></script>
+<script src="/archive-mobile.js"></script>
 <script>
 let currentUserId = null;
 let messages = [];
@@ -371,8 +372,9 @@ function switchTab(name) {
     b.classList.toggle("active", b.dataset.page === name));
   document.getElementById("pageTitle").textContent = PAGE_TITLES[name];
   document.getElementById("modeSubbar").textContent = name === "sell"
-    ? "演示模式：以继承人视角查看行情，所有挂售与购买意向均为模拟"
-    : "演示模式：右上角切换身份，模拟对应用户的手机";
+    ? "演示身份，不代表真实访问授权；行情与处置均为模拟"
+    : "演示身份，不代表真实访问授权；仅使用虚构资料";
+  if (name === "assets" || name === "me") archiveLoadMobile();
   if (name === "sell") {
     loadIdentities();
   }
@@ -400,7 +402,7 @@ function render() {
   }
   messagesEl.innerHTML = messages.map(m => {
     let html = `
-      <div class="bubble from">${m.content}</div>
+      <div class="bubble from">${ArchiveUI.esc(m.content)}</div>
       <div class="meta">用户池平台 · ${fmtTime(m.sentAt)}</div>`;
 
     if (m.status === "answered") {
@@ -439,9 +441,11 @@ async function reply(inquiryId, answer) {
 
 async function loadMessages() {
   if (!currentUserId) return;
+  const requestedUserId=currentUserId;
   try {
-    const resp = await fetch(`/api/mobile/messages?userId=${currentUserId}`);
+    const resp = await fetch(`/api/mobile/messages?userId=${requestedUserId}`);
     const data = await resp.json();
+    if (requestedUserId!==currentUserId || !resp.ok) return;
     messages = data.messages;
     render();
   } catch (e) {
@@ -450,7 +454,8 @@ async function loadMessages() {
 }
 
 function onIdentityChange() {
-  currentUserId = Number(identitySelect.value);
+  currentUserId = Number(identitySelect.value) || null;
+  messages=[]; render(); archiveResetMobile(); archiveLoadMobile();
   loadMessages();
   renderMarket();
 }
@@ -462,54 +467,41 @@ async function loadIdentities(keepCurrent = true) {
     showToast(error.message || "行情加载失败", true);
     return;
   }
-  identitySelect.innerHTML = marketUsers
-    .map(u => `<option value="${u.id}">${u.name}（${u.phone}）</option>`)
-    .join("");
-  const stillThere = marketUsers.some(u => u.id === currentUserId);
-  if (!keepCurrent || !stillThere) {
-    const requestedId = Number(new URLSearchParams(location.search).get("userId"));
-    currentUserId = marketUsers.some(u => u.id === requestedId)
-      ? requestedId : (marketUsers[0] ? marketUsers[0].id : null);
+  identitySelect.replaceChildren();
+  for(const u of marketUsers) {const option=document.createElement("option");option.value=u.id;option.textContent=u.name+"（"+u.phone+"）";identitySelect.append(option);}
+  const stillThere=marketUsers.some(u=>u.id===currentUserId);
+  if(!keepCurrent || !stillThere) {
+    const query=new URLSearchParams(location.search);
+    const requestedId=Number(query.get("userId"));
+    currentUserId=query.has("userId") ? (marketUsers.some(u=>u.id===requestedId) ? requestedId : null) : (marketUsers[0]?.id || null);
   }
-  if (currentUserId) identitySelect.value = String(currentUserId);
+  if(currentUserId) identitySelect.value=String(currentUserId);
+  else {const option=document.createElement("option");option.value="";option.textContent="请选择有效演示身份";identitySelect.prepend(option);identitySelect.value="";}
+  archiveResetMobile(); archiveLoadMobile();
   loadMessages();
   renderMarket();
 }
 
 /* ========== 我的 / 信息录入 ========== */
+document.getElementById("showRegister").addEventListener("click",()=>{const form=document.getElementById("registerForm");form.hidden=!form.hidden;if(!form.hidden)document.getElementById("r_name").focus();else form.querySelectorAll("input").forEach(input=>input.value="");});
 async function submitRegister() {
-  const body = {
-    name: document.getElementById("r_name").value,
-    gender: document.getElementById("r_gender").value,
-    age: document.getElementById("r_age").value,
-    idCard: document.getElementById("r_idCard").value,
-    phone: document.getElementById("r_phone").value,
-    game: document.getElementById("r_game").value,
-    account: document.getElementById("r_account").value,
-    password: document.getElementById("r_password").value,
-  };
-  const resp = await fetch("/api/users/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = await resp.json();
-  if (!resp.ok) { showToast(data.error || "提交失败", true); return; }
-
-  showToast("信息已录入用户池");
-  for (const id of ["r_name", "r_age", "r_idCard", "r_phone", "r_game", "r_account", "r_password"]) {
-    document.getElementById(id).value = "";
-  }
-  // 刷新身份列表并切换为新注册的用户
-  await loadIdentities();
-  currentUserId = data.userId;
-  identitySelect.value = data.userId;
-  loadMessages();
-  switchTab("sms");
+  const button=document.getElementById("registerSubmit");button.disabled=true;
+  const body={};
+  for(const key of ["name","gender","age","idCard","phone","game","account"]) {const value=document.getElementById("r_"+key).value.trim();if(value)body[key]=key==="age" ? Number(value) : value;}
+  try {
+    const data=await ArchiveUI.request("/api/users/add","POST",body);
+    showToast("已自动保存到 SQLite");
+    for(const key of ["name","age","idCard","phone","game","account"])document.getElementById("r_"+key).value="";
+    currentUserId=data.userId;
+    const query=new URLSearchParams(location.search);query.set("userId",currentUserId);query.set("tab","assets");history.replaceState(null,"","?"+query);
+    await loadIdentities();identitySelect.value=String(currentUserId);
+    document.getElementById("registerForm").hidden=true;switchTab("assets");
+  }catch(error){showToast(error.message,true);}finally{button.disabled=false;}
 }
 
 loadIdentities(false).then(() => {
-  if (new URLSearchParams(location.search).get("tab") === "sell") switchTab("sell");
+  const tab=new URLSearchParams(location.search).get("tab");
+  if(["assets","me","sell"].includes(tab))switchTab(tab);
 });
 setInterval(loadMessages, 2000);
 setInterval(() => {

@@ -50,7 +50,7 @@ function marketCurrentUser() {
 
 function marketCurrentAsset() {
   const user = marketCurrentUser();
-  const profile = user ? MARKET_PROFILES[user.account] : null;
+  const profile = user ? MARKET_PROFILES[String(user.id)] : null;
   return profile ? profile[marketType] : null;
 }
 
@@ -347,7 +347,7 @@ document.getElementById("marketScenarioButton").addEventListener("click", functi
 });
 document.getElementById("marketSwitchCase").addEventListener("click", function () {
   const example = marketUsers.find(function (user) {
-    return user.status === "已故" && Boolean(MARKET_PROFILES[user.account]);
+    return user.status === "已故" && Boolean(MARKET_PROFILES[String(user.id)]);
   });
   if (!example) return showToast("未找到已故客户的演示档案", true);
   identitySelect.value = String(example.id);
